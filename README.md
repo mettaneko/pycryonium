@@ -15,7 +15,7 @@ Added CTM flags.
 For `directions('1')` and `directions('2')`, you can add:
 
 ```python
-CTM = True
+directions('1', CTM = True) # or directions('1', 'rabbit', CTM = True) etc
 ```
 
 to use the click‑to‑move version (good for low‑end / laggy machines).
