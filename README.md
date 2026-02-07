@@ -48,6 +48,7 @@ If Python fails to run or packages are missing:
 ---
 
 ## Recent Updates
+### New image for Takaroda 
 ### Better failure detection
 More checks were added to automatically reset the macro if something goes wrong.
 Will add inactivity timer in the future
