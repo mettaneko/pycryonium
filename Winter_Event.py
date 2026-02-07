@@ -1190,4 +1190,8 @@ if AUTO_START:
 for z in range(3):
     print(f"Starting in {3-z}")
     time.sleep(1)
+if avM.get_wave() == 1:
+    avM.restart_match()
 main()
+
+
