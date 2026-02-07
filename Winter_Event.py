@@ -54,8 +54,9 @@ def toggle():
     global g_toggle
     g_toggle = not g_toggle
     if g_toggle == False:
+        
         sys.stdout.flush()
-        os.execl(sys.executable, sys.executable, *sys.argv)
+        os.execl(sys.executable, sys.executable, *sys.argv + ["--stopped"])
 
 keyboard.add_hotkey(STOP_START_HOTKEY, toggle) 
 
@@ -583,11 +584,14 @@ def detect_loss():
         if pyautogui.pixelMatchesColor(690,270,(242,25,28),tolerance=8):
             print("found loss")
             try:
+                args = list(sys.argv)
+                if "--stopped" in args:
+                    args.remove("--stopped")
                 sys.stdout.flush()
-                os.execl(sys.executable, sys.executable, *sys.argv)
+                os.execl(sys.executable, sys.executable, *args)
             except Exception as e:
                 print("Error")
-    
+        time.sleep(1)
 def main():
     print("Starting Winter Event Macro")
     rabbit_pos = [(956, 543), (692, 524), (953, 512)]
@@ -1152,7 +1156,10 @@ if pyautogui.pixelMatchesColor(690,270,(242,25,28),tolerance=8):
     on_failure()
 Thread(target=detect_loss).start()
 if AUTO_START:
-    g_toggle = True
+    if not "--stopped" in sys.argv:
+        g_toggle = True
+    else:
+        print("Program was STOPPED, won't auto start")
 for z in range(3):
     print(f"Starting in {3-z}")
     time.sleep(1)
