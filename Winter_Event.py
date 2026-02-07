@@ -6,6 +6,8 @@ import webhook
 import keyboard
 import time
 import pyautogui
+import sys
+import os
 from datetime import datetime
 from threading import Thread
 import ctypes
@@ -51,7 +53,10 @@ g_toggle = False
 def toggle():
     global g_toggle
     g_toggle = not g_toggle
-4
+    if g_toggle == False:
+        sys.stdout.flush()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
 keyboard.add_hotkey(STOP_START_HOTKEY, toggle) 
 
 # Actions
@@ -574,8 +579,6 @@ def sell_kaguya(): # Sells kaguya (cant reset while domain is active)
         
 def detect_loss():
     print("Starting loss detection")
-    import sys
-    import os
     while True:
         if pyautogui.pixelMatchesColor(690,270,(242,25,28),tolerance=8):
             print("found loss")
