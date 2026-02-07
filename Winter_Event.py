@@ -1118,13 +1118,10 @@ def main():
                     quick_rts()
                     time.sleep(2)
                     done_path = True
-
-                    # Buy all other lanes
-                    pass
                 if avM.get_wave()==150:
                     wave_150 = True
                 else:
-                    if avM.get_wave()%2==0:
+                    if avM.get_wave()%2==0 or avM.get_wave() == 139:
                         repair_barricades()
                         quick_rts()
                 time.sleep(2)
@@ -1203,6 +1200,7 @@ for z in range(3):
 if avM.get_wave() == 1:
     avM.restart_match()
 main()
+
 
 
 
