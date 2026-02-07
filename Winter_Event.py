@@ -352,6 +352,10 @@ def place_unit(unit: str, pos : tuple[int,int], close: bool | None=None, region:
         time.sleep(0.1)
         keyboard.press_and_release('q')
         time.sleep(0.5)
+        click(pos[0], pos[1], delay=0.1)
+        time.sleep(0.6)
+        if pyautogui.pixel(607, 381) == (255,255,255):
+            break
         if True: # if u want it to re-click
             print("Retrying placement...")
             try:
