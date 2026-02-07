@@ -48,7 +48,10 @@ If Python fails to run or packages are missing:
 ---
 
 ## Recent Updates
-### New image for Takaroda 
+### Added full nimbus support
+```python
+USE_NIMBUS = True # Use the nimbus cloud instead of newsman (more consistent + better)
+```
 ### Better failure detection
 More checks were added to automatically reset the macro if something goes wrong.
 Will add inactivity timer in the future
