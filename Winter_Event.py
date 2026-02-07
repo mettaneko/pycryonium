@@ -13,7 +13,7 @@ from threading import Thread
 import ctypes
 
 
-# Variablest
+# Variables
 STOP_START_HOTKEY = 'l'
 AUTO_START = True # if true upon failure it will auto restart, this also starts the macro when you launch the script
 USE_NIMBUS = True # Use the nimbus cloud instead of newsman (more consistent + better)
@@ -23,6 +23,9 @@ USE_AINZ_UNIT = "" # name of the unit
 MONARCH_AINZ_PLACEMENT = False # Gets monarch for the unit you place with caloric sone
 MAX_UPG_AINZ_PLACEMENT = False # Will just press z for auto upgrade if true, else it goes untill it finds a certain move (you need your own picture of it)
 AINZ_PLACEMENT_MOVE_PNG = "Winter\\YOUR_MOVE.png" # name the screenshot YOUR_MOVE, it will upgrade the unit untill it finds that image
+
+AINZ_SPELLS = False # After the first run it wont waste time selecting spells again
+
 Unit_Placements_Left = {
     "Ainz": 1,
     'Beni': 3,
@@ -418,24 +421,15 @@ def place_unit(unit: str, pos : tuple[int,int], close: bool | None=None, region:
     '''
     time_out = 50
     # Click on the unit
-    time_out_2 = 50
-    
     if region is None:
         while not bt.does_exist(f"Winter\\{unit}_hb.png", confidence=0.8, grayscale=False):
-            time_out_2-=1
-            if time_out_2<=0:
-                print("timed out")
-                break
             time.sleep(0.3)
         bt.click_image(f'Winter\\{unit}_hb.png', confidence=0.8,grayscale=False,offset=(0,0))
     else:
         while not bt.does_exist(f"Winter\\{unit}_hb.png", confidence=0.8, grayscale=False,region=region):
-            time_out_2-=1
-            if time_out_2<=0:
-                print("timed out")
-                break
             time.sleep(0.3)
         bt.click_image(f'Winter\\{unit}_hb.png', confidence=0.8,grayscale=False,offset=(0,0),region=region)
+        
     time.sleep(0.2)
     click(pos[0], pos[1], delay=0.67)
     time.sleep(0.5)
@@ -514,10 +508,12 @@ def ainz_setup(unit:str):
     '''
     pos  = [(646, 513), (526, 622), (779, 439), (779, 511), (503, 400), (524, 541), (781, 491), (506, 398), (681, 458), (778, 506), (959, 645), (750, 559), (649, 587), (690, 677), (503, 377), (495, 456), (618, 521)]
     for v,i in enumerate(pos):
-        if v == 12:
+        if AINZ_SPELLS and v<12:
+            continue
+        if v == 12: # the click to open world items
             print("Selected Spells")
             click(Unit_Positions['Ainz'][0][0], Unit_Positions['Ainz'][0][1], delay=0.2)
-            find = False
+            print("Waiting for world item logo")
             while not bt.does_exist("Winter\\CaloricThing.png",confidence=0.8,grayscale=False):
                 time.sleep(0.5)
             print(f"Placing unit {unit}")
@@ -894,6 +890,9 @@ def main():
                             ainz_setup(unit="god")
                         else:
                             ainz_setup(unit=USE_AINZ_UNIT)
+                        global AINZ_SPELLS
+                        if not AINZ_SPELLS:
+                            AINZ_SPELLS = True
                         click(pos[0], pos[1], delay=0.67) # Place world destroyer + auto upgrade
                         time.sleep(0.5)
                         while not pyautogui.pixel(607, 381) == (255,255,255):
@@ -1045,7 +1044,7 @@ def main():
                 click(607, 381, delay=0.2)
              
                
-
+                break
             for kuzan in Unit_Positions['Kuzan']:
                 click(kuzan[0],kuzan[1],delay=0.2)
                 time.sleep(0.5)
@@ -1162,7 +1161,6 @@ def main():
                 time.sleep(1)
 
 
-
 def reset_mount():
     detected = False
     while not detected:
@@ -1184,9 +1182,6 @@ def reset_mount():
             time.sleep(2.5)
             keyboard.press_and_release('v')
     
-
-
-
 if pyautogui.pixelMatchesColor(690,270,(242,25,28),tolerance=8):
     on_failure()
     reset_mount()
@@ -1202,4 +1197,3 @@ for z in range(3):
 if avM.get_wave() == 1:
     avM.restart_match()
 main()
-
