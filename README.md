@@ -41,5 +41,5 @@
   [https://pastebin.com/mS2xFd3m](https://pastebin.com/mS2xFd3m)
 
 ### Термины
-- Манго - макрос
+> Манго - макрос
 ---
