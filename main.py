@@ -4,59 +4,112 @@ import os
 import json
 import re
 import time
-import urllib.request
+from collections import OrderedDict
 
 UPDATE_SCRIPT = "update.py"
 POSITION_SCRIPT = "Position.py"
 MACRO_ORIGINAL = "Winter_Event.py"
 MACRO_TEMP_RUN = "Winter_Event_Run.py"
+WEBHOOK_FILE = "webhook.py"
 SETTINGS_FILE = "settings.json"
 
-DISCORD_CLIENT_ID = "1470090515755171911"
-DEFAULT_EXIT_KEY = "z"
+DISCORD_CLIENT_ID = "1470090515755171911" 
+
+DEFAULT_SETTINGS = OrderedDict([
+    ("WEBHOOK_URL", "paste_ur_url"),
+    ("ENABLE_DISCORD_RPC", True),
+    ("EXIT_HOTKEY", "z"),            
+    ("AUTO_START", False),
+    ("USE_NIMBUS", True),
+    ("USE_WD", True),
+    ("USE_DIO", False),
+    ("USE_AINZ_UNIT", ""),
+    ("MONARCH_AINZ_PLACEMENT", False),
+    ("MAX_UPG_AINZ_PLACEMENT", False),
+    ("AINZ_SPELLS", False),
+])
+# ---------------------------------------------------------
+
+def sync_settings():
+    """Читает settings.json, добавляет недостающее из DEFAULT, сохраняет обратно."""
+    current = {}
+    
+    # 1. Читаем текущий файл
+    if os.path.exists(SETTINGS_FILE):
+        try:
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                current = json.load(f)
+        except:
+            print("> [WARN] Settings file corrupted. Recreating.")
+            current = {}
+
+    # 2. Объединяем (Приоритет у пользователя)
+    new_settings = DEFAULT_SETTINGS.copy()
+    changed = False
+    
+    for key, default_val in DEFAULT_SETTINGS.items():
+        if key in current:
+            # Пользовательское значение сохраняется (даже если false!)
+            new_settings[key] = current[key]
+        else:
+            # Ключа нет - добавляем дефолтный
+            # print(f"> [CONFIG] Added new setting: {key}")
+            changed = True
+            
+    # Опционально: сохраняем неизвестные ключи (чтобы не удалять лишнее у пользователя)
+    for key, val in current.items():
+        if key not in new_settings:
+            new_settings[key] = val
+
+    # 3. Сохраняем, если были изменения
+    if changed or not os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(new_settings, f, indent=4, ensure_ascii=False)
+        print("> Settings updated.")
+        
+    return new_settings
 
 def run_wait(name):
     if os.path.exists(name):
         print(f"> {name}...")
         subprocess.Popen([sys.executable, name]).wait()
 
-def ensure_pip():
-    try:
-        subprocess.check_call([sys.executable, '-m', 'pip', '--version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError:
-        print("> PIP not found. Installing PIP...")
-        try:
-            get_pip_path = "get-pip.py"
-            urllib.request.urlretrieve("https://bootstrap.pypa.io/get-pip.py", get_pip_path)
-            subprocess.check_call([sys.executable, get_pip_path], stdout=subprocess.DEVNULL)
-            os.remove(get_pip_path)
-            print("> PIP installed successfully.")
-        except Exception as e:
-            print(f"CRITICAL ERROR: Failed to install pip: {e}")
-            input("Press Enter to exit...")
-            sys.exit(1)
-
 def install_deps():
-    ensure_pip()
+    try: import keyboard; import pypresence
+    except ImportError: 
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'keyboard', 'pypresence'], stdout=subprocess.DEVNULL)
 
-    required = ["keyboard", "pypresence", "requests"]
-    to_install = []
+def patch_file(filepath, settings):
+    """Патчит файл (например, webhook.py)"""
+    if not os.path.exists(filepath): return
     
-    for lib in required:
-        try:
-            __import__(lib)
-        except ImportError:
-            to_install.append(lib)
-
-    if to_install:
-        print(f"> Installing libraries: {', '.join(to_install)}...")
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', *to_install, '--no-warn-script-location'], stdout=subprocess.DEVNULL)
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    patched = False
+    for key, val in settings.items():
+        pattern = rf"^{key}\s*=\s*.*"
+        if re.search(pattern, content, flags=re.MULTILINE):
+            content = re.sub(pattern, f"{key} = {repr(val)}", content, flags=re.MULTILINE)
+            patched = True
+            
+    if patched:
+        print(f"> Patched {os.path.basename(filepath)}")
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
 
 def main():
     install_deps()
     import keyboard
 
-    # 1. Update & Position
+    # 0. СИНХРОНИЗАЦИЯ НАСТРОЕК (Важно!)
+    # Теперь settings содержит актуальные данные: либо то, что было в файле, либо дефолт
+    settings = sync_settings()
+    
+    # Достаем кнопку выхода (удаляем из словаря, чтобы не пытаться впихнуть её в макрос как переменную)
+    exit_key = settings.get("EXIT_HOTKEY", "end") 
+    
+    # 1. Запуск апдейтера и позиционирования
     run_wait(UPDATE_SCRIPT)
     run_wait(POSITION_SCRIPT)
 
@@ -65,64 +118,48 @@ def main():
         return
 
     try:
+        # 2. Патчим webhook.py (если он есть)
+        if os.path.exists(WEBHOOK_FILE):
+             patch_file(WEBHOOK_FILE, settings)
+
+        # 3. Готовим основной макрос
         with open(MACRO_ORIGINAL, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        exit_key = DEFAULT_EXIT_KEY
-        if os.path.exists(SETTINGS_FILE):
-            print("> Patching settings...")
-            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                settings = json.load(f)
-            
-            exit_key = settings.pop("EXIT_HOTKEY", DEFAULT_EXIT_KEY)
+        # Патчим переменные в основном макросе
+        for key, val in settings.items():
+            pattern = rf"^{key}\s*=\s*.*"
+            if re.search(pattern, content, flags=re.MULTILINE):
+                content = re.sub(pattern, f"{key} = {repr(val)}", content, flags=re.MULTILINE)
 
-            for key, val in settings.items():
-                pattern = rf"^{key}\s*=\s*.*"
-                if re.search(pattern, content, flags=re.MULTILINE):
-                    content = re.sub(pattern, f"{key} = {repr(val)}", content, flags=re.MULTILINE)
-
-        BUTTON_LABEL = "Download Macro"
-        BUTTON_URL = "https://github.com/mettaneko/Winter-Normal-Macro"
-
-        print("> Injecting RPC...")
-        rpc_code = f"""
-import threading, time, sys, os
+        # 4. Вставляем RPC (Если включено)
+        # Обратите внимание: проверяем настройку ENABLE_DISCORD_RPC
+        if settings.get("ENABLE_DISCORD_RPC", True):
+            rpc_code = f"""
+import threading, time, sys
 def _rpc():
     try:
         from pypresence import Presence
-        # Подключаемся
         RPC = Presence("{DISCORD_CLIENT_ID}")
         RPC.connect()
-        
         start = time.time()
         while True:
             try:
-                RPC.update(
-                    state="Farming...",             # Вторая строка статуса
-                    details="AV Winter Event Mango",   # Первая строка (жирная)
-                    start=start,                    # Время (00:01 elapsed)
-                    large_image="logo",             # Имя картинки в Assets (должно быть загружено!)
-                    large_text="v2.0",              # Текст при наведении на картинку
-                    buttons=[
-                        {{"label": "{BUTTON_LABEL}", "url": "{BUTTON_URL}"}}
-                    ]
-                )
-            except Exception as e:
-                pass
-                
+                RPC.update(state="Farming...", details="AV Winter Event Mango", start=start, large_image="logo")
+            except: pass
             time.sleep(15)
-    except Exception as e:
-        pass
-rpc_thread = threading.Thread(target=_rpc, daemon=True)
-rpc_thread.start()
+    except: pass
+threading.Thread(target=_rpc, daemon=True).start()
 """
+            content = rpc_code + "\n" + content
+        else:
+            print("> Discord RPC is disabled.")
 
-        content = rpc_code + "\n" + content
-
+        # 5. Сохраняем временный файл и запускаем
         with open(MACRO_TEMP_RUN, 'w', encoding='utf-8') as f:
             f.write(content)
 
-        print(f"\n[MAIN] RUNNING. Press '{exit_key.upper()}' to FULLY STOP & EXIT.")
+        print(f"\n[MAIN] RUNNING. Press '{exit_key.upper()}' to EXIT.")
         proc = subprocess.Popen([sys.executable, MACRO_TEMP_RUN])
 
         while True:
@@ -130,7 +167,7 @@ rpc_thread.start()
                 print("\n> Macro closed.")
                 break
             if keyboard.is_pressed(exit_key):
-                print(f"\n> EXIT KEY pressed. Stopping...")
+                print(f"\n> EXIT.")
                 proc.kill()
                 break
             time.sleep(0.05)
@@ -139,10 +176,7 @@ rpc_thread.start()
         print(f"Error: {e}")
     finally:
         if os.path.exists(MACRO_TEMP_RUN):
-            try:
-                for _ in range(20): 
-                    os.remove(MACRO_TEMP_RUN)
-                    break
+            try: os.remove(MACRO_TEMP_RUN)
             except: pass
         time.sleep(0.5)
 
