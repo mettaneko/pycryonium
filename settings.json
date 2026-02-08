@@ -1,4 +1,5 @@
 {
+    "WEBHOOK_URL": "paste_ur_url",
     "ENABLE_DISCORD_RPC": true,
     "EXIT_HOTKEY": "z",
     "AUTO_START": false,
