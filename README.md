@@ -30,3 +30,29 @@ Restarts program upon lost + resets the mount too. MAKE SURE TO ADD NEW PICTURE 
 detect_loss() # detects + restarts 
 reset_mount() # resets the mount state to unmounted
 ```
+
+# Common Fixes
+
+Mega downloads can occasionally corrupt files, which breaks either **Python** or **Tesseract.**
+
+### Tesseract issues
+
+If Tesseract stops working or the macro can’t detect text:
+
+    Re‑download the files and unzip again, or
+
+    Install a clean version of Tesseract from:
+    https://github.com/tesseract-ocr/tesseract/releases/tag/5.5.0
+
+    Clear the old Tesseract folder before installing
+
+    Optionally add the Tesseract directory (not the exe) to your system PATH
+
+### Python issues
+
+If Python fails to run or packages are missing:
+
+    Install a clean Python 3.13.11
+
+    Install the required packages listed here:
+    https://pastebin.com/mS2xFd3m
