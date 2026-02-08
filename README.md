@@ -12,6 +12,13 @@
 Да, обязательно. Как минимум нужно настроить Roblox-клиент, об этом скоро будет видео на русском, а пока посмотрите у автора оригинала:
 - https://youtu.be/kxoBF3VH0mc?si=Ek0SEAG8sa6LpNKG
 
+### Запуск через CMD
+Пример:
+```powershell
+ "D:\documents\GitHub\Winter-Normal-Macro\Python\python3.13.11\python.exe" "D:\documents\GitHub\Winter-Normal-Macro\main.py"
+```
+
+
 ### Отличия от оригинального репо:
 - Авто-апдейт манго из репозитория оригинального автора и его запуск одним файлом.
 - Подмена настроек из оригинального `Winter_Event.py` на настройки из `Settings.json`.

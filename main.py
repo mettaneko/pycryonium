@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = OrderedDict([
     ("WEBHOOK_URL", "paste_ur_url"),
     ("ENABLE_DISCORD_RPC", True),
     ("EXIT_HOTKEY", "z"),            
-    ("AUTO_START", False),
+    ("AUTO_START", True),
     ("USE_NIMBUS", True),
     ("USE_WD", True),
     ("USE_DIO", False),
