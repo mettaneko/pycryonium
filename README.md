@@ -2,7 +2,7 @@
 
 ---
 
-# Winter-Normal-Macro
+# pycryonium
 Манго для режима Winter Zombies Mode в Anime Vanguards.
 
 ## Что это?
