@@ -31,10 +31,8 @@ DEFAULT_SETTINGS = OrderedDict([
 # ---------------------------------------------------------
 
 def sync_settings():
-    """Читает settings.json, добавляет недостающее из DEFAULT, сохраняет обратно."""
     current = {}
-    
-    # 1. Читаем текущий файл
+
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
